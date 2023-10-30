@@ -1,0 +1,43 @@
+WITH time_frame AS
+(
+    SELECT date_trunc('week', NOW()) - INTERVAL '1 week'
+)
+
+SELECT
+    CASE hh.type
+        WHEN 'WA' THEN 'WAITER'
+        WHEN 'KP' THEN 'KP'
+        WHEN 'BM' THEN 'BARTENDER'
+        WHEN 'MX' THEN 'General Staff'
+        WHEN 'BK' THEN 'Barback'
+        WHEN 'BT' THEN 'BARISTA'
+    END AS "Role",
+
+    cc.company_name,
+    bb.id AS Booking_id,
+    bb.freelancer_pay_per_hour AS Rate,
+
+    (
+        (DATE_PART('hour', jj.confirmed - jj.opened) * 60) +
+        (DATE_PART('hour', jj.confirmed - jj.opened) * 60)
+    ) AS time_to_confirm,
+
+    (
+        DATE_PART('day', jj.confirmed - jj.opened) * 24 +
+        DATE_PART('hour', jj.confirmed - jj.opened) * 60 +
+        DATE_PART('minute', jj.confirmed - jj.opened)
+    ) AS days_included
+
+FROM hospitality_hospitalityrole hh
+JOIN freelancer_freelancer ff ON ff.id = hh.freelancer_id
+JOIN booking_booking bb ON bb.freelancer_id = ff.id
+JOIN job_jobrequest jj ON jj.id = bb.jobrequest_id
+JOIN hospitality_hospitalityrole ON hospitality_hospitalityrole.freelancer_id = ff.id
+JOIN client_client cc ON cc.id = jj.client_id
+
+WHERE jj.date >= '03-29-2021'
+AND date_trunc('week', jj.date) = (SELECT * FROM time_frame)
+AND bb.status IN ('OK', 'UN', 'NS', 'CA')
+AND bb.client_total_cost != '0'
+
+GROUP BY 1, 2, 3, 4, 5
